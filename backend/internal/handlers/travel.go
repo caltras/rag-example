@@ -45,15 +45,15 @@ func (h *Handler) TravelSearch(w http.ResponseWriter, r *http.Request) {
 	log.Printf("travel_embedding: completed in %v", embedTime)
 
 	searchStart := time.Now()
-	flights, err := h.db.SearchFlights(r.Context(), queryEmbedding, 5)
+	flights, err := h.db.SearchFlights(r.Context(), queryEmbedding, req.Query, 5)
 	if err != nil {
 		log.Printf("travel flight search error: %v", err)
 	}
-	hotels, err := h.db.SearchHotels(r.Context(), queryEmbedding, 5)
+	hotels, err := h.db.SearchHotels(r.Context(), queryEmbedding, req.Query, 5)
 	if err != nil {
 		log.Printf("travel hotel search error: %v", err)
 	}
-	destinations, err := h.db.SearchDestinations(r.Context(), queryEmbedding, 5)
+	destinations, err := h.db.SearchDestinations(r.Context(), queryEmbedding, req.Query, 5)
 	if err != nil {
 		log.Printf("travel destination search error: %v", err)
 	}
