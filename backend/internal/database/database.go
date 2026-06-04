@@ -46,15 +46,14 @@ func (db *DB) InsertArticle(ctx context.Context, article *models.Article, embedd
 	return err
 }
 
-func (db *DB) SearchSimilar(ctx context.Context, embedding []float32, query string, limit int) ([]models.Article, error) {
+func (db *DB) SearchSimilar(ctx context.Context, embedding []float32, limit int) ([]models.Article, error) {
 	vec := pgvector.NewVector(embedding)
 	rows, err := db.pool.Query(ctx,
 		`SELECT id, title, date, text, author, created_at
 		 FROM articles
-		 ORDER BY (1 - (embedding <=> $1)) * 0.5 +
-		   COALESCE(ts_rank(text_search, plainto_tsquery('english', $2)), 0) * 0.5 DESC
-		 LIMIT $3`,
-		vec, query, limit,
+		 ORDER BY embedding <=> $1
+		 LIMIT $2`,
+		vec, limit,
 	)
 	if err != nil {
 		log.Printf("SQL error: %v", err)
@@ -115,15 +114,14 @@ func (db *DB) InsertDestination(ctx context.Context, d *models.Destination, embe
 	return err
 }
 
-func (db *DB) SearchFlights(ctx context.Context, embedding []float32, query string, limit int) ([]models.Flight, error) {
+func (db *DB) SearchFlights(ctx context.Context, embedding []float32, limit int) ([]models.Flight, error) {
 	vec := pgvector.NewVector(embedding)
 	rows, err := db.pool.Query(ctx,
 		`SELECT id, airline, flight_number, origin, destination, departure_time, arrival_time, price, currency, date, class, created_at
 		 FROM flights
-		 ORDER BY (1 - (embedding <=> $1)) * 0.5 +
-		   COALESCE(ts_rank(text_search, plainto_tsquery('english', $2)), 0) * 0.5 DESC
-		 LIMIT $3`,
-		vec, query, limit,
+		 ORDER BY embedding <=> $1
+		 LIMIT $2`,
+		vec, limit,
 	)
 	if err != nil {
 		return nil, err
@@ -140,15 +138,14 @@ func (db *DB) SearchFlights(ctx context.Context, embedding []float32, query stri
 	return flights, nil
 }
 
-func (db *DB) SearchHotels(ctx context.Context, embedding []float32, query string, limit int) ([]models.Hotel, error) {
+func (db *DB) SearchHotels(ctx context.Context, embedding []float32, limit int) ([]models.Hotel, error) {
 	vec := pgvector.NewVector(embedding)
 	rows, err := db.pool.Query(ctx,
 		`SELECT id, name, city, address, price_per_night, currency, rating, amenities, created_at
 		 FROM hotels
-		 ORDER BY (1 - (embedding <=> $1)) * 0.5 +
-		   COALESCE(ts_rank(text_search, plainto_tsquery('english', $2)), 0) * 0.5 DESC
-		 LIMIT $3`,
-		vec, query, limit,
+		 ORDER BY embedding <=> $1
+		 LIMIT $2`,
+		vec, limit,
 	)
 	if err != nil {
 		return nil, err
@@ -165,15 +162,14 @@ func (db *DB) SearchHotels(ctx context.Context, embedding []float32, query strin
 	return hotels, nil
 }
 
-func (db *DB) SearchDestinations(ctx context.Context, embedding []float32, query string, limit int) ([]models.Destination, error) {
+func (db *DB) SearchDestinations(ctx context.Context, embedding []float32, limit int) ([]models.Destination, error) {
 	vec := pgvector.NewVector(embedding)
 	rows, err := db.pool.Query(ctx,
 		`SELECT id, city, country, category, title, description, address, created_at
 		 FROM destinations
-		 ORDER BY (1 - (embedding <=> $1)) * 0.5 +
-		   COALESCE(ts_rank(text_search, plainto_tsquery('english', $2)), 0) * 0.5 DESC
-		 LIMIT $3`,
-		vec, query, limit,
+		 ORDER BY embedding <=> $1
+		 LIMIT $2`,
+		vec, limit,
 	)
 	if err != nil {
 		return nil, err
