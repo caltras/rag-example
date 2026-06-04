@@ -94,7 +94,7 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 	log.Printf("embedding: completed in %v", embedTime)
 
 	searchStart := time.Now()
-	articles, err := h.db.SearchSimilar(r.Context(), queryEmbedding, 5)
+	articles, err := h.db.SearchSimilar(r.Context(), queryEmbedding, req.Query, 5)
 	if err != nil {
 		log.Printf("search error: %v", err)
 		http.Error(w, "Search failed", http.StatusInternalServerError)
