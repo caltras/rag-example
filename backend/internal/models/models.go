@@ -80,25 +80,17 @@ type TravelSearchRequest struct {
 	Mode      string `json:"mode"`
 }
 
-type ConnectingFlight struct {
-	From     Flight `json:"from"`
-	To       Flight `json:"to"`
-	Hub      string `json:"hub"`
-	TotalUSD float64 `json:"total_usd"`
-}
-
 type TravelSearchResponse struct {
-	Answer            string             `json:"answer"`
-	Flights           []Flight           `json:"flights"`
-	Hotels            []Hotel            `json:"hotels"`
-	Destinations      []Destination      `json:"destinations"`
-	ConnectingRoutes  []ConnectingFlight `json:"connecting_routes,omitempty"`
-	SessionID         string             `json:"session_id"`
-	Mode              string             `json:"mode"`
-	TimingEmbedMs     int64              `json:"timing_embed_ms"`
-	TimingSearchMs    int64              `json:"timing_search_ms"`
-	TimingChatMs      int64              `json:"timing_chat_ms"`
-	TimingTotalMs     int64              `json:"timing_total_ms"`
+	Answer          string        `json:"answer"`
+	Flights         []Flight      `json:"flights"`
+	Hotels          []Hotel       `json:"hotels"`
+	Destinations    []Destination `json:"destinations"`
+	SessionID       string        `json:"session_id"`
+	Mode            string        `json:"mode"`
+	TimingEmbedMs   int64         `json:"timing_embed_ms"`
+	TimingSearchMs  int64         `json:"timing_search_ms"`
+	TimingChatMs    int64         `json:"timing_chat_ms"`
+	TimingTotalMs   int64         `json:"timing_total_ms"`
 }
 
 type SeedFlight struct {

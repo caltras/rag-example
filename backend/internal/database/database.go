@@ -189,24 +189,3 @@ func (db *DB) SearchDestinations(ctx context.Context, embedding []float32, query
 	}
 	return dests, nil
 }
-
-func (db *DB) GetAllFlights(ctx context.Context) ([]models.Flight, error) {
-	rows, err := db.pool.Query(ctx,
-		`SELECT id, airline, flight_number, origin, destination, departure_time, arrival_time, price, currency, date, class, created_at
-		 FROM flights
-		 ORDER BY date, departure_time`,
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var flights []models.Flight
-	for rows.Next() {
-		var f models.Flight
-		if err := rows.Scan(&f.ID, &f.Airline, &f.FlightNumber, &f.Origin, &f.Destination, &f.DepartureTime, &f.ArrivalTime, &f.Price, &f.Currency, &f.Date, &f.Class, &f.CreatedAt); err != nil {
-			return nil, err
-		}
-		flights = append(flights, f)
-	}
-	return flights, nil
-}
