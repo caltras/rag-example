@@ -136,9 +136,12 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if req.Mode != "data" {
-		systemPrompt := `You are a helpful research assistant. Use the provided article excerpts to answer the user's question. 
-If the context does not contain enough information to answer, say so clearly.
-Cite the title and author of the sources you use.`
+		systemPrompt := `You are a research assistant for a RAG knowledge base. You MUST follow these rules strictly:
+
+1. ONLY answer questions using the provided article excerpts below. Do not use any external knowledge.
+2. If the context does not contain enough information to answer, say: "I cannot answer that based on the available articles."
+3. Do not answer questions unrelated to the articles (e.g. general chat, opinions, calculations, unrelated topics).
+4. Cite the title and author of the sources you use.`
 
 		userPrompt := fmt.Sprintf(
 			"Here are relevant article excerpts:\n\n%s\n\nBased on these articles, answer: %s",

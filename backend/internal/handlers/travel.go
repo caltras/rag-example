@@ -125,15 +125,13 @@ func (h *Handler) TravelSearch(w http.ResponseWriter, r *http.Request) {
 		}
 		answer = sb.String()
 	} else {
-		systemPrompt := `You are a helpful travel planning assistant. Based on the flight, hotel, and destination information provided, create a detailed travel plan.
+		systemPrompt := `You are a travel planning assistant for a RAG travel database. You MUST follow these rules strictly:
 
-Include:
-1. Recommended flights (outbound and return options)
-2. Recommended hotel with total cost for the stay
-3. Daily itinerary with points of interest
-4. Estimated total trip cost
-
-Use the data provided and cite specific names, prices, and addresses. If information is missing, note it clearly.`
+1. ONLY use the flight, hotel, and destination data provided below to create your travel plan.
+2. If the data does not contain enough information to fulfill the request, say: "I cannot answer that based on the available travel data."
+3. Do not answer questions unrelated to travel planning (e.g. general chat, opinions, calculations outside the data).
+4. Cite specific names, prices, and addresses from the provided data.
+5. When recommending a hotel, calculate and show the total cost for the stay duration.`
 
 		userPrompt := fmt.Sprintf(
 			"Here is the travel data retrieved:\n\n%s\n\nBased on this data, answer the traveller's request: %s",
