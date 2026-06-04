@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG Search</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app">
+        <header class="header">
+            <h1>RAG Search</h1>
+            <p class="subtitle">Ask questions about the knowledge base</p>
+        </header>
+
+        <main class="chat" id="chat">
+            <div class="message assistant">
+                <div class="avatar">R</div>
+                <div class="bubble">
+                    Hello! I can answer questions based on the articles in the database. Try asking about LLMs, vector databases, RAG, or any topic in the knowledge base.
+                </div>
+            </div>
+        </main>
+
+        <div class="sources-panel" id="sourcesPanel">
+            <div class="sources-header" id="sourcesHeader">
+                <span>Sources</span>
+                <span class="sources-count" id="sourcesCount">0</span>
+            </div>
+            <div class="sources-list" id="sourcesList"></div>
+        </div>
+
+        <form class="input-bar" id="inputForm">
+            <input
+                type="text"
+                id="queryInput"
+                placeholder="Ask a question..."
+                autofocus
+            />
+            <button type="submit" id="sendBtn">Send</button>
+        </form>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
