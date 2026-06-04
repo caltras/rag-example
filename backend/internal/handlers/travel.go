@@ -202,37 +202,6 @@ func (h *Handler) TravelSearch(w http.ResponseWriter, r *http.Request) {
 	var answer string
 	chatStart := time.Now()
 
-	// Short-circuit: if the query asks about a direct flight between two cities, check explicitly
-	if directOrigin, directDest, ok := parseDirectFlightQuery(req.Query); ok {
-		found := false
-		for _, f := range allFlights {
-			if extractCity(f.Origin) == directOrigin && extractCity(f.Destination) == directDest {
-				found = true
-				break
-			}
-		}
-		if !found {
-			answer = fmt.Sprintf("There is no direct flight from %s to %s.", directOrigin, directDest)
-			chatTime := time.Since(chatStart)
-			totalTime := time.Since(startTotal)
-			resp := models.TravelSearchResponse{
-				Answer:    answer,
-				Flights:   flights,
-				Hotels:    hotels,
-				Destinations: destinations,
-				SessionID: sessionID,
-				Mode:      req.Mode,
-				TimingEmbedMs:  embedTime.Milliseconds(),
-				TimingSearchMs: searchTime.Milliseconds(),
-				TimingChatMs:   0,
-				TimingTotalMs:  totalTime.Milliseconds(),
-			}
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(resp)
-			return
-		}
-	}
-
 	if req.Mode == "data" {
 		var sb strings.Builder
 		sb.WriteString("# Flights\n\n")
@@ -342,50 +311,4 @@ func hasDirectFlight(flights []models.Flight, origin, dest string) bool {
 		}
 	}
 	return false
-}
-
-// knownCities is the set of cities in our travel database
-var knownCities = []string{"Calgary", "Toronto", "Vancouver", "Montreal", "New York", "Edmonton", "Banff", "Niagara Falls", "Whistler"}
-
-func parseDirectFlightQuery(query string) (origin, dest string, ok bool) {
-	lower := strings.ToLower(query)
-	if !strings.Contains(lower, "direct flight") {
-		return "", "", false
-	}
-
-	// Extract city names from the query that are in our known list
-	var found []string
-	queryLower := strings.ToLower(query)
-	for _, city := range knownCities {
-		if strings.Contains(queryLower, strings.ToLower(city)) {
-			found = append(found, city)
-		}
-	}
-
-	// Need exactly 2 cities found: origin and destination
-	if len(found) < 2 {
-		return "", "", false
-	}
-
-	// Try to determine order: look for "from X to Y" or "between X and Y"
-	fromIdx := strings.Index(lower, "from ")
-	toIdx := strings.Index(lower, " to ")
-	if fromIdx >= 0 && toIdx > fromIdx {
-		// "from X to Y" — X is origin, Y is destination
-		for _, c := range found {
-			cLower := strings.ToLower(c)
-			ci := strings.Index(lower, cLower)
-			if ci > fromIdx && ci < toIdx {
-				origin = c
-			} else if ci > toIdx {
-				dest = c
-			}
-		}
-		if origin != "" && dest != "" {
-			return origin, dest, true
-		}
-	}
-
-	// Fallback: first found = origin, second = dest
-	return found[0], found[1], true
 }
