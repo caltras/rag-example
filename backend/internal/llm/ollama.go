@@ -1,4 +1,4 @@
-package embeddings
+package llm
 
 import (
 	"bytes"
@@ -9,45 +9,49 @@ import (
 	"net/http"
 )
 
-type Client struct {
-	baseURL string
-	http    *http.Client
-}
-
-type embeddingRequest struct {
+type ollamaEmbedRequest struct {
 	Model  string `json:"model"`
 	Prompt string `json:"prompt"`
 }
 
-type embeddingResponse struct {
+type ollamaEmbedResponse struct {
 	Embedding []float32 `json:"embedding"`
 }
 
-type chatMessage struct {
+type ollamaChatMessage struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
 }
 
-type chatRequest struct {
-	Model    string        `json:"model"`
-	Messages []chatMessage `json:"messages"`
-	Stream   bool          `json:"stream"`
+type ollamaChatRequest struct {
+	Model    string              `json:"model"`
+	Messages []ollamaChatMessage `json:"messages"`
+	Stream   bool                `json:"stream"`
 }
 
-type chatResponse struct {
-	Message chatMessage `json:"message"`
+type ollamaChatResponse struct {
+	Message ollamaChatMessage `json:"message"`
 }
 
-func NewClient(baseURL string) *Client {
-	return &Client{
-		baseURL: baseURL,
-		http:    &http.Client{},
+type OllamaProvider struct {
+	baseURL    string
+	embedModel string
+	chatModel  string
+	http       *http.Client
+}
+
+func NewOllamaProvider(baseURL, embedModel, chatModel string) *OllamaProvider {
+	return &OllamaProvider{
+		baseURL:    baseURL,
+		embedModel: embedModel,
+		chatModel:  chatModel,
+		http:       &http.Client{},
 	}
 }
 
-func (c *Client) GenerateEmbedding(ctx context.Context, text string) ([]float32, error) {
-	body := embeddingRequest{
-		Model:  "bge-m3",
+func (o *OllamaProvider) GenerateEmbedding(ctx context.Context, text string) ([]float32, error) {
+	body := ollamaEmbedRequest{
+		Model:  o.embedModel,
 		Prompt: text,
 	}
 	data, err := json.Marshal(body)
@@ -55,13 +59,13 @@ func (c *Client) GenerateEmbedding(ctx context.Context, text string) ([]float32,
 		return nil, fmt.Errorf("marshal embedding request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+"/api/embeddings", bytes.NewReader(data))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, o.baseURL+"/api/embeddings", bytes.NewReader(data))
 	if err != nil {
 		return nil, fmt.Errorf("create embedding request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := c.http.Do(req)
+	resp, err := o.http.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("embedding request failed: %w", err)
 	}
@@ -72,7 +76,7 @@ func (c *Client) GenerateEmbedding(ctx context.Context, text string) ([]float32,
 		return nil, fmt.Errorf("ollama returned status %d: %s", resp.StatusCode, string(respBody))
 	}
 
-	var result embeddingResponse
+	var result ollamaEmbedResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, fmt.Errorf("decode embedding response: %w", err)
 	}
@@ -84,27 +88,28 @@ func (c *Client) GenerateEmbedding(ctx context.Context, text string) ([]float32,
 	return result.Embedding, nil
 }
 
-func (c *Client) Chat(ctx context.Context, systemPrompt, userPrompt string) (string, error) {
-	body := chatRequest{
-		Model: "qwen2.5:3b",
-		Messages: []chatMessage{
-			{Role: "system", Content: systemPrompt},
-			{Role: "user", Content: userPrompt},
-		},
-		Stream: false,
+func (o *OllamaProvider) Chat(ctx context.Context, messages []Message) (string, error) {
+	oc := make([]ollamaChatMessage, len(messages))
+	for i, m := range messages {
+		oc[i] = ollamaChatMessage{Role: m.Role, Content: m.Content}
+	}
+	body := ollamaChatRequest{
+		Model:    o.chatModel,
+		Messages: oc,
+		Stream:   false,
 	}
 	data, err := json.Marshal(body)
 	if err != nil {
 		return "", fmt.Errorf("marshal chat request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+"/api/chat", bytes.NewReader(data))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, o.baseURL+"/api/chat", bytes.NewReader(data))
 	if err != nil {
 		return "", fmt.Errorf("create chat request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := c.http.Do(req)
+	resp, err := o.http.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("chat request failed: %w", err)
 	}
@@ -115,7 +120,7 @@ func (c *Client) Chat(ctx context.Context, systemPrompt, userPrompt string) (str
 		return "", fmt.Errorf("ollama returned status %d: %s", resp.StatusCode, string(respBody))
 	}
 
-	var result chatResponse
+	var result ollamaChatResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		respBody, _ := io.ReadAll(resp.Body)
 		return string(respBody), nil

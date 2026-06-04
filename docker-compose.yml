@@ -22,20 +22,18 @@ services:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
-    entrypoint: >
-      /bin/sh -c "
-      ollama serve &
-      sleep 2 &&
-      ollama pull bge-m3 &&
-      ollama pull qwen2.5:3b &&
-      wait
-      "
+    extra_hosts:
+      - "registry.ollama.ai:52.222.154.208"
+      - "registry.ollama.ai:52.222.154.60"
+      - "registry.ollama.ai:52.222.154.82"
+      - "registry.ollama.ai:52.222.154.103"
+    entrypoint: ollama serve
     healthcheck:
-      test: ["CMD", "ollama", "list"]
+      test: ["CMD", "ollama", "ls"]
       interval: 10s
       timeout: 10s
       retries: 30
-      start_period: 180s
+      start_period: 10s
 
   backend:
     build:
@@ -43,6 +41,8 @@ services:
       dockerfile: backend/Dockerfile
     ports:
       - "8080:8080"
+    env_file:
+      - ./backend/.env
     environment:
       DATABASE_URL: postgres://postgres:postgres@db:5432/ragexample?sslmode=disable
       OLLAMA_URL: http://ollama:11434

@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1200, height=900">
+<title>RAG — From Concepts to Production</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+  }
+
+  .slide {
+    display: none;
+    width: 100vw;
+    height: 100vh;
+    padding: 60px 80px;
+    flex-direction: column;
+    position: absolute;
+    top: 0;
+    left: 0;
+    overflow-y: auto;
+  }
+
+  .slide.active { display: flex; }
+
+  h1 {
+    font-size: 3.2em;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #38bdf8, #818cf8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 20px;
+  }
+
+  .title-slide h1 {
+    font-size: 4em;
+    margin-bottom: 10px;
+  }
+
+  .title-slide .subtitle {
+    font-size: 1.3em;
+    color: #94a3b8;
+    font-weight: 300;
+  }
+
+  .title-slide .meta {
+    margin-top: 40px;
+    color: #64748b;
+    font-size: 0.9em;
+  }
+
+  h2 {
+    font-size: 2em;
+    font-weight: 700;
+    color: #38bdf8;
+    margin-bottom: 24px;
+    letter-spacing: -0.01em;
+  }
+
+  h3 {
+    font-size: 1.3em;
+    font-weight: 600;
+    color: #818cf8;
+    margin-bottom: 12px;
+  }
+
+  p, li {
+    font-size: 1.1em;
+    line-height: 1.6;
+    color: #cbd5e1;
+    margin-bottom: 10px;
+  }
+
+  ul, ol { padding-left: 24px; margin-bottom: 16px; }
+  li { margin-bottom: 6px; }
+
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    background: #1e293b;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    color: #a5b4fc;
+  }
+
+  pre {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 16px 20px;
+    overflow-x: auto;
+    margin: 12px 0;
+    font-size: 0.85em;
+    line-height: 1.5;
+  }
+
+  pre code {
+    background: none;
+    padding: 0;
+    color: #e2e8f0;
+  }
+
+  .grid {
+    display: grid;
+    gap: 20px;
+    flex: 1;
+  }
+
+  .grid-2 { grid-template-columns: 1fr 1fr; }
+  .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .grid-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+  .card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 20px;
+  }
+
+  .card h3 { margin-bottom: 8px; font-size: 1.1em; }
+  .card p, .card li { font-size: 0.95em; }
+
+  .card.highlight {
+    border-color: #38bdf8;
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+  }
+
+  .diagram {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85em;
+    line-height: 1.8;
+  }
+
+  .diagram .arrow { color: #38bdf8; }
+  .diagram .box {
+    display: inline-block;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 8px 16px;
+    margin: 4px 0;
+  }
+  .diagram .box.highlight {
+    border-color: #818cf8;
+    background: #1e1b4b;
+  }
+  .diagram .label { color: #64748b; font-size: 0.8em; }
+
+  .table-wrap { overflow-x: auto; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95em;
+  }
+  th {
+    background: #1e293b;
+    color: #38bdf8;
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 2px solid #334155;
+  }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #1e293b;
+  }
+  tr:hover td { background: #1e293b; }
+
+  .nav {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    z-index: 100;
+    background: #1e293b;
+    padding: 12px 24px;
+    border-radius: 30px;
+    border: 1px solid #334155;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  }
+
+  .nav button {
+    background: #334155;
+    border: none;
+    color: #e2e8f0;
+    font-size: 1.1em;
+    padding: 6px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    transition: background 0.2s;
+  }
+
+  .nav button:hover { background: #475569; }
+  .nav .page { color: #94a3b8; font-size: 0.85em; min-width: 60px; text-align: center; }
+
+  .footer-nav {
+    position: fixed;
+    bottom: 90px;
+    right: 40px;
+    display: flex;
+    gap: 10px;
+    z-index: 100;
+  }
+
+  .footer-nav button {
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #94a3b8;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8em;
+    transition: all 0.2s;
+  }
+
+  .footer-nav button:hover {
+    background: #334155;
+    color: #e2e8f0;
+  }
+
+  .tag {
+    display: inline-block;
+    background: #1e1b4b;
+    color: #818cf8;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    font-weight: 600;
+    margin-right: 6px;
+  }
+
+  .big-number {
+    font-size: 2.5em;
+    font-weight: 800;
+    color: #38bdf8;
+  }
+
+  .ref-list {
+    font-size: 0.85em;
+    line-height: 1.7;
+  }
+
+  .ref-list li { margin-bottom: 4px; }
+  .ref-list a { color: #818cf8; text-decoration: none; }
+  .ref-list a:hover { text-decoration: underline; }
+
+  .impact-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    margin-top: 12px;
+  }
+  .impact-grid .before, .impact-grid .after {
+    padding: 16px;
+    border-radius: 8px;
+  }
+  .impact-grid .before {
+    background: #451a1a;
+    border: 1px solid #7f1d1d;
+  }
+  .impact-grid .after {
+    background: #14532d;
+    border: 1px solid #166534;
+  }
+  .impact-grid .label {
+    font-weight: 700;
+    font-size: 1.1em;
+    margin-bottom: 8px;
+  }
+  .impact-grid .before .label { color: #f87171; }
+  .impact-grid .after .label { color: #4ade80; }
+
+  @media (max-width: 900px) {
+    .slide { padding: 30px 24px; }
+    h1 { font-size: 2em; }
+    .title-slide h1 { font-size: 2.5em; }
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== SLIDE 1: TITLE ==================== -->
+<div class="slide title-slide active" data-index="0">
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;">
+    <h1>Retrieval-Augmented Generation</h1>
+    <div class="subtitle">From concepts to a working implementation</div>
+    <div style="margin-top:16px;">
+      <span class="tag">RAG</span>
+      <span class="tag">pgvector</span>
+      <span class="tag">Go</span>
+      <span class="tag">Ollama</span>
+      <span class="tag">BGE-M3</span>
+    </div>
+    <div class="meta">
+      <div>rag-example project walkthrough</div>
+      <div style="margin-top:4px;">June 2026</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SLIDE 2: WHAT IS RAG ==================== -->
+<div class="slide" data-index="1">
+  <h2>What is RAG?</h2>
+  <div class="grid grid-2" style="flex:1;">
+    <div class="card highlight" style="display:flex;flex-direction:column;justify-content:center;">
+      <h3>Retrieval-Augmented Generation</h3>
+      <p>An AI architecture that <strong>retrieves relevant documents</strong> from a knowledge base and injects them as context for an LLM to generate grounded answers.</p>
+      <p style="margin-top:12px;">The LLM answers <em>using your data</em> — not just its training data.</p>
+    </div>
+    <div class="card" style="display:flex;flex-direction:column;justify-content:center;">
+      <h3>Analogy</h3>
+      <p><strong>Open-book exam</strong> vs. closed-book exam:</p>
+      <ul>
+        <li>LLM alone → closed-book (relies on memory, may hallucinate)</li>
+        <li>LLM + RAG → open-book (looks up facts, cites sources)</li>
+      </ul>
+    </div>
+    <div class="card" style="grid-column: 1 / -1;">
+      <h3>Why Now?</h3>
+      <div class="grid grid-4" style="gap:12px;">
+        <div><span class="big-number">2020</span><br><span style="color:#94a3b8;">Lewis et al. publish "RAG" paper at NeurIPS</span></div>
+        <div><span class="big-number">2023</span><br><span style="color:#94a3b8;">LLM boom — every company needs grounded AI</span></div>
+        <div><span class="big-number">2024</span><br><span style="color:#94a3b8;">pgvector, Ollama, BGE-M3 mature — stack is production-ready</span></div>
+        <div><span class="big-number">Today</span><br><span style="color:#94a3b8;">RAG is the default pattern for LLM applications</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SLIDE 3: ARCHITECTURE ==================== -->
+<div class="slide" data-index="2">
+  <h2>RAG Architecture</h2>
+  <div style="display:flex;flex-direction:column;justify-content:center;flex:1;">
+    <div class="diagram" style="font-size:0.9em;line-height:2;">
+      <div style="margin-bottom:12px;font-weight:600;color:#e2e8f0;">User Query: "What are vector databases?"</div>
+
+      <div class="box highlight">Query</div>
+      <div class="arrow">▼</div>
+      <div class="box">BGE-M3<br><span class="label">Embedding Model (Ollama)</span></div>
+      <div class="arrow">▼</div>
+      <div style="color:#94a3b8;">[0.023, -0.451, 0.789, ...]  ← 1024‑dim vector</div>
+      <div class="arrow">▼</div>
+      <div class="box highlight">PostgreSQL + pgvector<br><span class="label">Cosine distance (<=>) — LIMIT 5</span></div>
+      <div class="arrow">▼</div>
+      <div style="color:#94a3b8;">"Vector databases index high‑dimensional embeddings..."</div>
+      <div style="color:#94a3b8;">"pgvector extends PostgreSQL with vector search..."</div>
+      <div class="arrow">▼</div>
+      <div class="box">LLM (OpenRouter / Ollama)<br><span class="label">System: "Answer using these excerpts..."</span></div>
+      <div class="arrow">▼</div>
+      <div style="color:#4ade80;font-weight:600;">"Vector databases are specialized stores for embeddings..."</div>
+      <div style="color:#64748b;font-size:0.8em;">+ Sources: [Understanding Vector Databases, pgvector Optimization, ...]</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SLIDE 4: EMBEDDINGS ==================== -->
+<div class="slide" data-index="3">
+  <h2>Embeddings — The Bridge Between Text and Math</h2>
+  <div class="grid grid-2" style="flex:1;">
+    <div class="card">
+      <h3>What is an Embedding?</h3>
+      <p>A <strong>dense vector</strong> (list of floats) that captures the semantic meaning of text.</p>
+      <pre><code>"vector database" → [0.023, -0.451, 0.789, ...]  (1024 values)</code></pre>
+      <p>Similar texts → similar vectors (nearby in vector space).</p>
+    </div>
+    <div class="card">
+      <h3>BGE-M3 by BAAI</h3>
+      <ul>
+        <li><strong>1024</strong> dimensions</li>
+        <li><strong>100+</strong> languages</li>
+        <li><strong>MIT</strong> license</li>
+        <li>Runs on CPU via Ollama</li>
+        <li>Supports dense, sparse, and multi-vector retrieval</li>
+      </ul>
+    </div>
+    <div class="card" style="grid-column:1/-1;">
+      <h3>How Embeddings Enable Search</h3>
+      <div style="display:flex;gap:24px;align-items:center;justify-content:center;padding:12px;">
+        <div style="text-align:center;">
+          <div style="font-weight:600;">"cheap hotel in Paris"</div>
+          <div style="color:#64748b;font-size:0.8em;margin-top:4px;">↕ cosine similarity</div>
+        </div>
+        <div style="color:#38bdf8;font-size:1.5em;">≈</div>
+        <div style="text-align:center;">
+          <div style="font-weight:600;">"affordable accommodation near Eiffel Tower"</div>
+          <div style="color:#64748b;font-size:0.8em;margin-top:4px;">(no keyword overlap!)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SLIDE 5: pgvector ==================== -->
+<div class="slide" data-index="4">
+  <h2>pgvector — Vector Search in PostgreSQL</h2>
+  <div class="grid grid-2" style="flex:1;">
+    <div class="card">
+      <h3>Distance Operators</h3>
+      <table>
+        <tr><th>Operator</th><th>Metric</th><th>Range</th><th>Use Case</th></tr>
+        <tr>
+          <td><code>&lt;=&gt;</code></td>
+          <td>Cosine distance</td>
+          <td>[0, 2]</td>
+          <td><strong>Text / semantic search</strong></td>
+        </tr>
+        <tr>
+          <td><code>&lt;-&gt;</code></td>
+          <td>L2 (Euclidean)</td>
+          <td>[0, ∞)</td>
+          <td>Images, magnitudes matter</td>
+        </tr>
+        <tr>
+          <td><code>&lt;#&gt;</code></td>
+          <td>Negative inner product</td>
+          <td>(-∞, ∞)</td>
+          <td>Dot-product-trained models</td>
+        </tr>
+      </table>
+      <p style="margin-top:8px;font-size:0.85em;color:#94a3b8;">We use <code>&lt;=&gt;</code> — cosine similarity ignores magnitude, which is ideal for text.</p>
+    </div>
+    <div class="card">
+      <h3>Index Types</h3>
+      <table>
+        <tr><th>Index</th><th>Build</th><th>Query</th><th>Memory</th></tr>
+        <tr><td><strong>IVFFlat</strong></td><td>Fast</td><td>Moderate</td><td>Low</td></tr>
+        <tr><td><strong>HNSW</strong></td><td>Slow</td><td>Fast</td><td>Higher</td></tr>
+      </table>
+      <p style="margin-top:12px;"><strong>IVFFlat:</strong> <code>lists = sqrt(n)</code>, searches nearest <code>probes</code> clusters.</p>
+      <p style="margin-top:8px;"><strong>HNSW:</strong> Hierarchical graph. Parameters <code>m</code> (links) and <code>ef_construction</code>.</p>
+    </div>
+    <div class="card" style="grid-column:1/-1;">
+      <h3>Why pgvector?</h3>
+      <ul>
+        <li><strong>No separate vector DB</strong> — vectors live alongside relational data</li>
+        <li>Transactional consistency (ACID)</li>
+        <li>Backup with <code>pg_dump</code></li>
+        <li>Combine vector search with SQL filters: <code>WHERE category = 'hotel' ORDER BY embedding &lt;=&gt; $1</code></li>
+        <li>Mature, active open-source project</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SLIDE 6: TECH STACK ==================== -->
+<div class="slide" data-index="5">
+  <h2>Technology Stack</h2>
+  <div class="grid grid-3" style="flex:1;">
+    <div class="card">
+      <h3>🛢️ Storage</h3>
+      <p><strong>PostgreSQL 16 + pgvector</strong></p>
+      <p style="font-size:0.9em;">Relational data + vector index in one database. ACID compliant, familiar tooling.</p>
+    </div>
+    <div class="card">
+      <h3>🧠 Embeddings</h3>
+      <p><strong>Ollama + BGE-M3</strong></p>
+      <p style="font-size:0.9em;">Local model server. 1024-dim dense vectors. MIT license. Runs on CPU.</p>
+    </div>
+    <div class="card">
+      <h3>🤖 Chat Model</h3>
+      <p><strong>OpenRouter → gpt-oss-120b</strong></p>
+      <p style="font-size:0.9em;">Single API key, dozens of models. Free tier available. Falls back to Ollama local.</p>
+    </div>
+    <div class="card">
+      <h3>⚙️ Backend</h3>
+      <p><strong>Go 1.26</strong></p>
+      <p style="font-size:0.9em;">Fast startup, great concurrency, single binary. Standard library + chi router.</p>
+    </div>
+    <div class="card">
+      <h3>🎨 Frontend</h3>
+      <p><strong>Vanilla JS + CSS</strong></p>
+      <p style="font-size:0.9em;">Minimal chat UI. No framework dependency. Session ID stored in localStorage.</p>
+    </div>
+    <div class="card">
+      <h3>🐳 Deployment</h3>
+      <p><strong>Docker Compose</strong></p>
+      <p style="font-size:0.9em;">PostgreSQL + Ollama in containers. Backend runs natively (avoids corporate TLS issues).</p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SLIDE 7: USE CASE ==================== -->
+<div class="slide" data-index="6">
+  <h2>Use Case: Travel Agency AI Assistant</h2>
+  <div class="grid grid-2" style="flex:1;">
+    <div class="card" style="grid-column:1/-1;">
+      <h3>Scenario</h3>
+      <p>A travel agent needs to prepare a <strong>10-day Japan family trip</strong> for the Smith family (2 adults, 2 kids under 10). The knowledge base has destination guides, hotel catalogues, flight schedules, visa rules, and client profiles.</p>
+    </div>
+    <div class="card">
+      <h3>Indexed Data</h3>
+      <pre style="font-size:0.75em;"><code>-- Destinations (attractions, hotels, restaurants)
+CREATE TABLE destinations (
+  city TEXT, category TEXT,     -- 'hotel', 'attraction', 'restaurant'
+  title TEXT, content TEXT,
+  metadata JSONB,               -- price, rating, season
+  embedding VECTOR(1024)
+);
+
+-- Client profiles with preferences
+CREATE TABLE client_profiles (
+  name TEXT, preferences JSONB, -- diet, budget, activity level
+  passport_data JSONB,
+  embedding VECTOR(1024)
+);</code></pre>
+    </div>
+    <div class="card">
+      <h3>Sample Queries</h3>
+      <table style="font-size:0.8em;">
+        <tr><th>Agent Query</th><th>Retrieved</th></tr>
+        <tr><td>"Family hotel Tokyo, under $200/night, 5 nights"</td><td>Hotels matching budget + family amenity filters</td></tr>
+        <tr><td>"Weather in Barcelona in March, packing list"</td><td>Destination guides with climate data</td></tr>
+        <tr><td>"7-day Paris itinerary, art museums"</td><td>Attractions, opening hours, ticket prices</td></tr>
+        <tr><td>"Does Mr. Smith need a Japan visa?"</td><td>Passport data + visa regulations</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SLIDE 8: USE CASE - OUTPUT ==================== -->
+<div class="slide" data-index="7">
+  <h2>Travel Agency — Generated Plan</h2>
+  <div class="card" style="flex:1;display:flex;flex-direction:column;justify-content:center;">
+    <pre style="font-size:0.78em;line-height:1.5;max-height:70vh;overflow-y:auto;"><code># Japan Family Trip — 10-Day Plan for the Smith Family
+
+## Flight Recommendations
+- Outbound: JFK → NRT, Delta DL-275, 7:00 AM
+- Inbound: NRT → JFK, Delta DL-276, 4:30 PM
+- Total: ~$3,200 economy (Delta Family Fare, src: flights_2026_03)
+
+## Hotel: Shinjuku Granbell Hotel
+- 2 connecting rooms, 10 nights, $180/night → $3,600 total
+- Kids under 12 stay free (src: hotels_tokyo_2026)
+
+## Itinerary
+- Day 1–3: Tokyo — DisneySea, Ghibli Museum, teamLab Planets
+- Day 4–5: Hakone — Ryokan stay, Mt. Fuji view, open-air onsen
+- Day 6–8: Kyoto — Fushimi Inari, bamboo grove, samurai experience
+- Day 9–10: Osaka — Universal Studios, Dotonbori food tour
+
+## Visa
+✅ US passport holders: 90-day tourist visa on arrival. No advance application.
+(src: visa_japan_2026)
+
+## Total Estimated Cost: $8,900
+(flights + hotel + activities + meals + transport)
+</code></pre>
+    <div class="grid grid-2" style="gap:12px;margin-top:12px;">
+      <div style="background:#451a1a;border:1px solid #7f1d1d;border-radius:8px;padding:12px;text-align:center;">
+        <div style="color:#f87171;font-weight:700;">Before RAG</div>
+        <div style="color:#fca5a5;font-size:0.85em;">30–45 min · 4+ systems · inconsistent quality</div>
+      </div>
+      <div style="background:#14532d;border:1px solid #166534;border-radius:8px;padding:12px;text-align:center;">
+        <div style="color:#4ade80;font-weight:700;">After RAG</div>
+        <div style="color:#86efac;font-size:0.85em;">2–3 min · one query · cited, standardised plan</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SLIDE 9: EXTENSION IDEAS ==================== -->
+<div class="slide" data-index="8">
+  <h2>Beyond the Demo — Production Enhancements</h2>
+  <div class="grid grid-2" style="flex:1;">
+    <div class="card highlight">
+      <h3>🔍 Hybrid Search</h3>
+      <p>Combine vector search (<code>&lt;=&gt;</code>) with keyword search (PostgreSQL <code>tsvector</code> / <code>ts_rank</code>):</p>
+      <pre style="font-size:0.8em;"><code>WHERE embedding &lt;=&gt; $1 &lt; 0.5
+   OR ts_content @@ to_tsquery('english', $2)
+ORDER BY ts_rank(ts_content, to_tsquery($2)) DESC;</code></pre>
+      <p style="font-size:0.85em;">Catches exact matches + semantic matches.</p>
+    </div>
+    <div class="card highlight">
+      <h3>🔄 Re-ranking</h3>
+      <p>Retrieve top 20 with pgvector, then re-rank with a cross-encoder (e.g., BGE-reranker).</p>
+      <pre style="font-size:0.8em;"><code>1. pgvector: TOP 20 (fast, approximate)
+2. Cross-encoder: score each (100ms each)
+3. Return TOP 5 (high precision)</code></pre>
+      <p style="font-size:0.85em;"> Improves precision significantly at minimal latency cost.</p>
+    </div>
+    <div class="card highlight">
+      <h3>🏷️ Metadata Filtering</h3>
+      <pre style="font-size:0.8em;"><code>WHERE metadata-&gt;&gt;'category' = 'hotel'
+  AND (metadata-&gt;&gt;'price')::int &lt; 200
+ORDER BY embedding &lt;=&gt; $1
+LIMIT 5;</code></pre>
+      <p style="font-size:0.85em;">Hybrid queries — vector search within a filtered subset.</p>
+    </div>
+    <div class="card highlight">
+      <h3>📊 Evaluation & Monitoring</h3>
+      <ul>
+        <li><strong>Hit rate</strong>: % of queries where user clicked a source</li>
+        <li><strong>Precision@k</strong>: relevance of top-k results</li>
+        <li><strong>Latency</strong>: embedding + search + generation time</li>
+        <li>A/B test different embedding models, chunk sizes, retrieval counts</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SLIDE 10: REFERENCES ==================== -->
+<div class="slide" data-index="9">
+  <h2>References & Further Reading</h2>
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;">
+    <ol class="ref-list" style="columns:2;column-gap:40px;">
+      <li>Lewis, P., et al. (2020). <em>Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks</em>. NeurIPS. <a href="https://arxiv.org/abs/2005.11401">arxiv.org/abs/2005.11401</a></li>
+      <li>BAAI (2024). <em>BGE-M3: Multilingual Multi-Function Embeddings</em>. <a href="https://huggingface.co/BAAI/bge-m3">huggingface.co/BAAI/bge-m3</a></li>
+      <li>pgvector. <em>Vector similarity search for PostgreSQL</em>. <a href="https://github.com/pgvector/pgvector">github.com/pgvector/pgvector</a></li>
+      <li>Ollama. <em>Get up and running with LLMs locally</em>. <a href="https://ollama.ai">ollama.ai</a></li>
+      <li>OpenRouter. <em>Unified API for LLMs</em>. <a href="https://openrouter.ai">openrouter.ai</a></li>
+      <li>Go Documentation. <em>Build fast, reliable software</em>. <a href="https://go.dev/doc/">go.dev/doc/</a></li>
+      <li>Docker Compose. <em>Define multi-container applications</em>. <a href="https://docs.docker.com/compose/">docs.docker.com/compose/</a></li>
+      <li>Johnson, J., et al. (2019). <em>Billion-scale similarity search with GPUs</em>. <a href="https://arxiv.org/abs/1702.08734">arxiv.org/abs/1702.08734</a></li>
+      <li>Malkov & Yashunin (2016). <em>HNSW for approximate nearest neighbor search</em>. <a href="https://arxiv.org/abs/1603.09320">arxiv.org/abs/1603.09320</a></li>
+      <li>PostgreSQL. <em>Chapter 11: Indexes</em>. <a href="https://www.postgresql.org/docs/current/indexes.html">postgresql.org/docs/current/indexes.html</a></li>
+    </ol>
+  </div>
+</div>
+
+<!-- ==================== NAVIGATION ==================== -->
+<div class="nav">
+  <button onclick="changeSlide(-1)">◀ Prev</button>
+  <span class="page" id="pageNum">1 / 10</span>
+  <button onclick="changeSlide(1)">Next ▶</button>
+</div>
+
+<div class="footer-nav">
+  <button onclick="goTo(0)">Title</button>
+  <button onclick="goTo(1)">RAG</button>
+  <button onclick="goTo(2)">Arch</button>
+  <button onclick="goTo(3)">Embed</button>
+  <button onclick="goTo(4)">pgvector</button>
+  <button onclick="goTo(5)">Stack</button>
+  <button onclick="goTo(6)">Travel</button>
+  <button onclick="goTo(7)">Plan</button>
+  <button onclick="goTo(8)">Enhance</button>
+  <button onclick="goTo(9)">Refs</button>
+</div>
+
+<script>
+  let current = 0;
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+
+  function showSlide(idx) {
+    slides.forEach((s, i) => s.classList.toggle('active', i === idx));
+    document.getElementById('pageNum').textContent = (idx + 1) + ' / ' + total;
+    current = idx;
+  }
+
+  function changeSlide(dir) {
+    const next = Math.max(0, Math.min(total - 1, current + dir));
+    if (next !== current) showSlide(next);
+  }
+
+  function goTo(idx) { showSlide(Math.max(0, Math.min(total - 1, idx))); }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); changeSlide(1); }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); changeSlide(-1); }
+    if (e.key === 'Home') { e.preventDefault(); goTo(0); }
+    if (e.key === 'End') { e.preventDefault(); goTo(total - 1); }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.nav') && !e.target.closest('.footer-nav')) changeSlide(1);
+  });
+</script>
+</body>
+</html>

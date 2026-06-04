@@ -9,15 +9,35 @@
 <body>
     <div class="app">
         <header class="header">
-            <h1>RAG Search</h1>
-            <p class="subtitle">Ask questions about the knowledge base</p>
+            <div class="header-top">
+                <h1>RAG Search</h1>
+                <div class="tabs">
+                    <button class="tab active" data-tab="articles">Articles</button>
+                    <button class="tab" data-tab="travel">Travel</button>
+                    <label class="mode-toggle" title="Toggle between Chat (AI explanation) and Data (raw results)">
+                        <span class="mode-label">Chat</span>
+                        <input type="checkbox" id="modeSwitch">
+                        <span class="mode-slider"></span>
+                        <span class="mode-label data-label">Data</span>
+                    </label>
+                </div>
+            </div>
+            <p class="subtitle articles-subtitle">Ask questions about the knowledge base</p>
+            <p class="subtitle travel-subtitle" style="display:none;">Plan your trip — flights, hotels, and destinations</p>
         </header>
 
         <main class="chat" id="chat">
-            <div class="message assistant">
+            <div class="message assistant" id="welcome-articles">
                 <div class="avatar">R</div>
                 <div class="bubble">
                     Hello! I can answer questions based on the articles in the database. Try asking about LLMs, vector databases, RAG, or any topic in the knowledge base.
+                </div>
+            </div>
+            <div class="message assistant" id="welcome-travel" style="display:none;">
+                <div class="avatar">T</div>
+                <div class="bubble">
+                    Welcome to Travel Planner! I can help you plan trips. Try asking something like:<br>
+                    <em>"Prepare a plan to travel to Calgary from Toronto, stay in the cheapest hotel from July 1st to July 7th 2026, give me the best prices"</em>
                 </div>
             </div>
         </main>
@@ -41,6 +61,7 @@
         </form>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/marked@15.0.7/marked.min.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
